@@ -1,19 +1,38 @@
 package runner
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
+
+	cp "github.com/otiai10/copy"
 
 	"github.com/kubeshop/testkube/pkg/api/v1/testkube"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRun(t *testing.T) {
+func TestRunGradle(t *testing.T) {
+	// setup
+	tempDir, _ := os.MkdirTemp("", "*")
+	os.Setenv("RUNNER_DATADIR", tempDir)
 
-	t.Run("runner should run test based on execution data", func(t *testing.T) {
+	repoDir := filepath.Join(tempDir, "repo")
+	os.Mkdir(repoDir, 0755)
+
+	_ = cp.Copy("../../examples/hello-gradlew", repoDir)
+
+	t.Run("run simple gradle project tests", func(t *testing.T) {
 		// given
 		runner := NewRunner()
 		execution := testkube.NewQueuedExecution()
-		execution.Content = testkube.NewStringTestContent("hello I'm test content")
+		execution.Content = &testkube.TestContent{
+			Type_: string(testkube.TestContentTypeGitDir),
+			Repository: &testkube.Repository{
+				Uri:    "https://github.com/lreimer/hands-on-gradle.git",
+				Branch: "main",
+			},
+		}
+		execution.Args = []string{"test"}
 
 		// when
 		result, err := runner.Run(*execution)
@@ -22,5 +41,66 @@ func TestRun(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, result.Status, testkube.ExecutionStatusSuccess)
 	})
+}
 
+func TestRunErrors(t *testing.T) {
+
+	t.Run("no RUNNER_DATADIR", func(t *testing.T) {
+		os.Setenv("RUNNER_DATADIR", "/unknown")
+
+		// given
+		runner := NewRunner()
+		execution := testkube.NewQueuedExecution()
+
+		// when
+		_, err := runner.Run(*execution)
+
+		// then
+		assert.Error(t, err)
+	})
+
+	t.Run("unsupported file-content", func(t *testing.T) {
+		tempDir := os.TempDir()
+		os.Setenv("RUNNER_DATADIR", tempDir)
+
+		// given
+		runner := NewRunner()
+		execution := testkube.NewQueuedExecution()
+		execution.Content = testkube.NewStringTestContent("")
+
+		// when
+		result, err := runner.Run(*execution)
+
+		// then
+		assert.NoError(t, err)
+		assert.Equal(t, result.Status, testkube.ExecutionStatusError)
+	})
+
+	t.Run("no settings.gradle", func(t *testing.T) {
+		// setup
+		tempDir, _ := os.MkdirTemp("", "*")
+		os.Setenv("RUNNER_DATADIR", tempDir)
+
+		repoDir := filepath.Join(tempDir, "repo")
+		os.Mkdir(repoDir, 0755)
+
+		// given
+		runner := NewRunner()
+		execution := testkube.NewQueuedExecution()
+		execution.Content = &testkube.TestContent{
+			Type_: string(testkube.TestContentTypeGitDir),
+			Repository: &testkube.Repository{
+				Uri:    "https://github.com/lreimer/hands-on-gradle.git",
+				Branch: "main",
+			},
+		}
+
+		// when
+		result, err := runner.Run(*execution)
+
+		// then
+		assert.NoError(t, err)
+		assert.Equal(t, result.Status, testkube.ExecutionStatusError)
+		assert.Contains(t, result.ErrorMessage, "no")
+	})
 }
