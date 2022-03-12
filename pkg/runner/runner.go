@@ -40,15 +40,18 @@ func (r *GradleRunner) Run(execution testkube.Execution) (result testkube.Execut
 
 	// the Gradle executor does not support files
 	if execution.Content.IsFile() {
-		return result.Err(fmt.Errorf("executor only support git-dir based test")), nil
+		return result.Err(fmt.Errorf("executor only support git-dir based tests")), nil
 	}
 
-	// check settings.gradle or build.gradle files exist
+	// check settings.gradle or settings.gradle.kts files exist
 	directory := filepath.Join(r.params.Datadir, "repo")
 	settingsGradle := filepath.Join(directory, "settings.gradle")
-	_, err = os.Stat(settingsGradle)
-	if errors.Is(err, os.ErrNotExist) {
-		return result.Err(fmt.Errorf("no settings.gradle file found for test")), nil
+	settingsGradleKts := filepath.Join(directory, "settings.gradle.kts")
+
+	_, settingsGradleErr := os.Stat(settingsGradle)
+	_, settingsGradleKtsErr := os.Stat(settingsGradleKts)
+	if errors.Is(settingsGradleErr, os.ErrNotExist) && errors.Is(settingsGradleKtsErr, os.ErrNotExist) {
+		return result.Err(fmt.Errorf("no settings.gradle or settings.gradle.kts found")), nil
 	}
 
 	// determine the Gradle command to use
