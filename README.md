@@ -6,7 +6,16 @@ TestKube Gradle Executor is a test executor to run Gradle tasks with [TestKube](
 
 ## Usage
 
-## Examples
+You need to register and deploy the executor in your cluster.
+```bash
+kubectl apply -f examples/gradle-executor.yaml
+```
+
+Issue the following commands to create and start a Gradle test for a given Git repository:
+```bash
+kubectl testkube tests create --git-uri https://github.com/lreimer/hands-on-gradle.git --git-branch main --type "gradle/test" --name gradle-test
+kubectl testkube tests run --args test --watch gradle-test
+```
 
 # Issues and enchancements 
 
