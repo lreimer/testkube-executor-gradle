@@ -2,29 +2,18 @@ package runner
 
 import (
 	"github.com/kubeshop/testkube/pkg/api/v1/testkube"
-	"github.com/kubeshop/testkube/pkg/executor/content"
 	"github.com/kubeshop/testkube/pkg/executor/output"
 )
 
-func NewRunner() *ExampleRunner {
-	return &ExampleRunner{
-		Fetcher: content.NewFetcher(),
-	}
+func NewRunner() *GradleRunner {
+	return &GradleRunner{}
 }
 
-// ExampleRunner for template - change me to some valid runner
-type ExampleRunner struct {
-	Fetcher content.ContentFetcher
+type GradleRunner struct {
 }
 
-func (r *ExampleRunner) Run(execution testkube.Execution) (result testkube.ExecutionResult, err error) {
-	path, err := r.Fetcher.Fetch(execution.Content)
-	if err != nil {
-		return result, err
-	}
-
-	output.PrintEvent("created content path", path)
-
+func (r *GradleRunner) Run(execution testkube.Execution) (result testkube.ExecutionResult, err error) {
+	// the Gradle executor does not support files
 	if execution.Content.IsFile() {
 		output.PrintEvent("using file", execution)
 		// TODO implement file based test content for string, git-file, file-uri
