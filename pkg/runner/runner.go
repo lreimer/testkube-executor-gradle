@@ -65,19 +65,17 @@ func (r *GradleRunner) Run(execution testkube.Execution) (result testkube.Execut
 		gradleCommand = "./gradlew"
 	}
 
-	// prepare the ENVs to use during Gradle execution
-	envs := ""
+	// simply set the ENVs to use during Gradle execution
 	for key, value := range execution.Envs {
-		env := fmt.Sprintf("%s=%s", key, value)
-		envs = envs + env + " "
+		os.Setenv(key, value)
 	}
 
 	// pass additional executor arguments/flags to Gradle
 	args := []string{"--no-daemon"}
 	args = append(args, execution.Args...)
 
-	output.PrintEvent("Running", directory, envs+gradleCommand, args)
-	output, err := executor.Run(directory, envs+gradleCommand, args...)
+	output.PrintEvent("Running", directory, gradleCommand, args)
+	output, err := executor.Run(directory, gradleCommand, args...)
 
 	if err == nil {
 		result.Status = testkube.ExecutionStatusSuccess

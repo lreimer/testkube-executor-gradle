@@ -62,14 +62,14 @@ func TestRunGradle(t *testing.T) {
 			},
 		}
 		execution.Args = []string{"test"}
-		// execution.Envs = map[string]string{"TESTKUBE_GRADLE": "true"}
+		execution.Envs = map[string]string{"TESTKUBE_GRADLE": "true"}
 
 		// when
 		result, err := runner.Run(*execution)
 
 		// then
 		assert.NoError(t, err)
-		assert.Equal(t, result.Status, testkube.ExecutionStatusError)
+		assert.Equal(t, result.Status, testkube.ExecutionStatusSuccess)
 		assert.Len(t, result.Steps, 1)
 	})
 }
