@@ -40,6 +40,7 @@ func TestRunGradle(t *testing.T) {
 		// then
 		assert.NoError(t, err)
 		assert.Equal(t, result.Status, testkube.ExecutionStatusSuccess)
+		assert.Len(t, result.Steps, 1)
 	})
 }
 

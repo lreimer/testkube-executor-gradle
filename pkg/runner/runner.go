@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
+	junit "github.com/joshdk/go-junit"
 	"github.com/kubeshop/testkube/pkg/api/v1/testkube"
 	"github.com/kubeshop/testkube/pkg/executor"
 	"github.com/kubeshop/testkube/pkg/executor/output"
@@ -80,9 +81,38 @@ func (r *GradleRunner) Run(execution testkube.Execution) (result testkube.Execut
 		return result.Err(err), nil
 	}
 
-	return testkube.ExecutionResult{
-		Status:     testkube.StatusPtr(testkube.SUCCESS_ExecutionStatus),
-		Output:     string(output),
-		OutputType: "text/plain",
-	}, nil
+	result.Status = testkube.ExecutionStatusSuccess
+	result.Output = string(output)
+	result.OutputType = "text/plain"
+
+	junitReportPath := filepath.Join(directory, "build", "test-results", args[len(args)-1])
+	err = filepath.Walk(junitReportPath, func(path string, info os.FileInfo, err error) error {
+		if !info.IsDir() && filepath.Ext(path) == ".xml" {
+			suites, _ := junit.IngestFile(path)
+			for _, suite := range suites {
+				for _, test := range suite.Tests {
+					result.Steps = append(
+						result.Steps,
+						testkube.ExecutionStepResult{
+							Name:     fmt.Sprintf("%s - %s", suite.Name, test.Name),
+							Duration: test.Duration.String(),
+							Status:   mapStatus(test.Status),
+						})
+				}
+			}
+		}
+
+		return nil
+	})
+
+	return result, err
+}
+
+func mapStatus(in junit.Status) (out string) {
+	switch string(in) {
+	case "passed":
+		return string(testkube.SUCCESS_ExecutionStatus)
+	default:
+		return string(testkube.ERROR__ExecutionStatus)
+	}
 }
