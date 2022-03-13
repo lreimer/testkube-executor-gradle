@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	junit "github.com/joshdk/go-junit"
 	"github.com/kubeshop/testkube/pkg/api/v1/testkube"
@@ -77,11 +78,21 @@ func (r *GradleRunner) Run(execution testkube.Execution) (result testkube.Execut
 
 	output.PrintEvent("Running", directory, envs+gradleCommand, args)
 	output, err := executor.Run(directory, envs+gradleCommand, args...)
-	if err != nil {
-		return result.Err(err), nil
+
+	if err == nil {
+		result.Status = testkube.ExecutionStatusSuccess
+	} else {
+		result.Status = testkube.ExecutionStatusError
+		result.ErrorMessage = err.Error()
+		if strings.Contains(result.ErrorMessage, "exit status 1") {
+			// probably some tests have failed
+			result.ErrorMessage = "build failed with an exception"
+		} else {
+			// Gradle was unable to run at all
+			return result, nil
+		}
 	}
 
-	result.Status = testkube.ExecutionStatusSuccess
 	result.Output = string(output)
 	result.OutputType = "text/plain"
 

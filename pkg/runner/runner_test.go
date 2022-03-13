@@ -12,16 +12,15 @@ import (
 )
 
 func TestRunGradle(t *testing.T) {
-	// setup
-	tempDir, _ := os.MkdirTemp("", "*")
-	os.Setenv("RUNNER_DATADIR", tempDir)
 
-	repoDir := filepath.Join(tempDir, "repo")
-	os.Mkdir(repoDir, 0755)
+	t.Run("run gradle wrapper project tests", func(t *testing.T) {
+		// setup
+		tempDir, _ := os.MkdirTemp("", "*")
+		os.Setenv("RUNNER_DATADIR", tempDir)
+		repoDir := filepath.Join(tempDir, "repo")
+		os.Mkdir(repoDir, 0755)
+		_ = cp.Copy("../../examples/hello-gradlew", repoDir)
 
-	_ = cp.Copy("../../examples/hello-gradlew", repoDir)
-
-	t.Run("run simple gradle project tests", func(t *testing.T) {
 		// given
 		runner := NewRunner()
 		execution := testkube.NewQueuedExecution()
@@ -33,6 +32,7 @@ func TestRunGradle(t *testing.T) {
 			},
 		}
 		execution.Args = []string{"test"}
+		// execution.Envs = map[string]string{"TESTKUBE_GRADLE": "true"}
 
 		// when
 		result, err := runner.Run(*execution)
@@ -40,6 +40,36 @@ func TestRunGradle(t *testing.T) {
 		// then
 		assert.NoError(t, err)
 		assert.Equal(t, result.Status, testkube.ExecutionStatusSuccess)
+		assert.Len(t, result.Steps, 1)
+	})
+
+	t.Run("run gradle project tests", func(t *testing.T) {
+		// setup
+		tempDir, _ := os.MkdirTemp("", "*")
+		os.Setenv("RUNNER_DATADIR", tempDir)
+		repoDir := filepath.Join(tempDir, "repo")
+		os.Mkdir(repoDir, 0755)
+		_ = cp.Copy("../../examples/hello-gradle", repoDir)
+
+		// given
+		runner := NewRunner()
+		execution := testkube.NewQueuedExecution()
+		execution.Content = &testkube.TestContent{
+			Type_: string(testkube.TestContentTypeGitDir),
+			Repository: &testkube.Repository{
+				Uri:    "https://github.com/lreimer/hands-on-gradle.git",
+				Branch: "main",
+			},
+		}
+		execution.Args = []string{"test"}
+		// execution.Envs = map[string]string{"TESTKUBE_GRADLE": "true"}
+
+		// when
+		result, err := runner.Run(*execution)
+
+		// then
+		assert.NoError(t, err)
+		assert.Equal(t, result.Status, testkube.ExecutionStatusError)
 		assert.Len(t, result.Steps, 1)
 	})
 }
