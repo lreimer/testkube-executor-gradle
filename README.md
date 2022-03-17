@@ -13,7 +13,7 @@ kubectl apply -f examples/gradle-executor.yaml
 
 Issue the following commands to create and start a Gradle test for a given Git repository:
 ```bash
-kubectl testkube tests create --git-uri https://github.com/lreimer/hands-on-gradle.git --git-branch main --type "gradle/test" --name gradle-test
+kubectl testkube tests create --git-uri https://github.com/lreimer/hands-on-testkube.git --git-branch main --type "gradle/test" --name gradle-test
 kubectl testkube tests run --args test --watch gradle-test
 ```
 
