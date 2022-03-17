@@ -74,6 +74,12 @@ func (r *GradleRunner) Run(execution testkube.Execution) (result testkube.Execut
 	args := []string{"--no-daemon"}
 	args = append(args, execution.Args...)
 
+	if !strings.EqualFold(execution.TestType, "gradle/project") {
+		// then use the test subtype as task name
+		task := strings.Split(execution.TestType, "/")[1]
+		args = append(args, task)
+	}
+
 	output.PrintEvent("Running", directory, gradleCommand, args)
 	output, err := executor.Run(directory, gradleCommand, args...)
 

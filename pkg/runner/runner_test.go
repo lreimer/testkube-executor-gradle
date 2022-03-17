@@ -13,7 +13,7 @@ import (
 
 func TestRunGradle(t *testing.T) {
 
-	t.Run("run gradle wrapper project tests", func(t *testing.T) {
+	t.Run("run gradle wrapper project with explicit target arg", func(t *testing.T) {
 		// setup
 		tempDir, _ := os.MkdirTemp("", "*")
 		os.Setenv("RUNNER_DATADIR", tempDir)
@@ -24,6 +24,7 @@ func TestRunGradle(t *testing.T) {
 		// given
 		runner := NewRunner()
 		execution := testkube.NewQueuedExecution()
+		execution.TestType = "gradle/project"
 		execution.Content = &testkube.TestContent{
 			Type_: string(testkube.TestContentTypeGitDir),
 			Repository: &testkube.Repository{
@@ -32,7 +33,6 @@ func TestRunGradle(t *testing.T) {
 			},
 		}
 		execution.Args = []string{"test"}
-		// execution.Envs = map[string]string{"TESTKUBE_GRADLE": "true"}
 
 		// when
 		result, err := runner.Run(*execution)
@@ -43,7 +43,7 @@ func TestRunGradle(t *testing.T) {
 		assert.Len(t, result.Steps, 1)
 	})
 
-	t.Run("run gradle project tests", func(t *testing.T) {
+	t.Run("run gradle project test with envs", func(t *testing.T) {
 		// setup
 		tempDir, _ := os.MkdirTemp("", "*")
 		os.Setenv("RUNNER_DATADIR", tempDir)
@@ -54,6 +54,7 @@ func TestRunGradle(t *testing.T) {
 		// given
 		runner := NewRunner()
 		execution := testkube.NewQueuedExecution()
+		execution.TestType = "gradle/test"
 		execution.Content = &testkube.TestContent{
 			Type_: string(testkube.TestContentTypeGitDir),
 			Repository: &testkube.Repository{
@@ -61,7 +62,6 @@ func TestRunGradle(t *testing.T) {
 				Branch: "main",
 			},
 		}
-		execution.Args = []string{"test"}
 		execution.Envs = map[string]string{"TESTKUBE_GRADLE": "true"}
 
 		// when
@@ -97,6 +97,7 @@ func TestRunErrors(t *testing.T) {
 		// given
 		runner := NewRunner()
 		execution := testkube.NewQueuedExecution()
+		execution.TestType = "gradle/project"
 		execution.Content = testkube.NewStringTestContent("")
 
 		// when
@@ -118,6 +119,7 @@ func TestRunErrors(t *testing.T) {
 		// given
 		runner := NewRunner()
 		execution := testkube.NewQueuedExecution()
+		execution.TestType = "gradle/project"
 		execution.Content = &testkube.TestContent{
 			Type_: string(testkube.TestContentTypeGitDir),
 			Repository: &testkube.Repository{
